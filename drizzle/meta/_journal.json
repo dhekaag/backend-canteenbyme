@@ -1,0 +1,13 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1716064872638,
+      "tag": "0000_steady_kabuki",
+      "breakpoints": true
+    }
+  ]
+}
