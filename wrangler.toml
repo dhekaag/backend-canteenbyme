@@ -1,6 +1,8 @@
-name = "my-app"
+name = "api-canteenbyme"
 compatibility_date = "2023-12-01"
 
+[placement]
+mode = "smart"
 # [vars]
 # MY_VAR = "my-variable"
 
@@ -12,10 +14,10 @@ compatibility_date = "2023-12-01"
 # binding = "MY_BUCKET"
 # bucket_name = "my-bucket"
 
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "my-database"
-# database_id = ""
+[[d1_databases]]
+binding = "DB"
+database_name = "d1-canteenbyme"
+database_id = "d75ccb44-199f-4539-8295-97e907c01ac4"
 
 # [ai]
 # binding = "AI"
