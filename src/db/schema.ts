@@ -1,6 +1,10 @@
-import { sql } from "drizzle-orm";
-import { pgTable, integer, serial, text, timestamp } from "drizzle-orm/pg-core";
-import { v4 as uuidv4 } from "uuid";
+import {
+  pgTable,
+  integer,
+  text,
+  timestamp,
+  boolean,
+} from "drizzle-orm/pg-core";
 
 // Definisi tabel canteens
 export const canteens = pgTable("canteens", {
@@ -9,8 +13,6 @@ export const canteens = pgTable("canteens", {
   imageUrl: text("image_url"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
-export type InsertCanteens = typeof canteens.$inferInsert;
-export type SelectCanteens = typeof canteens.$inferSelect;
 
 // Definisi tabel menus
 export const menus = pgTable("menus", {
@@ -21,7 +23,13 @@ export const menus = pgTable("menus", {
   type: text("type").notNull(),
   name: text("name").notNull(),
   price: integer("price").notNull(),
+  signature: boolean("signature").notNull().default(false),
   imageUrl: text("image_url"),
   description: text("description"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+export type InsertCanteens = typeof canteens.$inferInsert;
+export type SelectCanteens = typeof canteens.$inferSelect;
+export type InsertMenus = typeof menus.$inferInsert;
+export type SelectMenus = typeof menus.$inferSelect;

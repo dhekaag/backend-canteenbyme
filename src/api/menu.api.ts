@@ -5,22 +5,30 @@ import { canteens } from "../db/schema";
 import {
   createCanteenRepo,
   deleteCanteenRepo,
-} from "../repositories/canteens.repository";
+  getAllCanteenRepo,
+} from "../repositories/canteen.repository";
 import { Hono } from "hono";
 import { Env } from "..";
 import { v4 as uuidv4 } from "uuid";
 import { neon } from "@neondatabase/serverless";
 
-const canteenRouter = new Hono<{ Bindings: Env }>();
+const menuRouter = new Hono<{ Bindings: Env }>();
 
-canteenRouter.get("/", async (c) => {
+menuRouter.get("/", async (c) => {
   const sql = neon(c.env.DATABASE_URL);
   const db = drizzle(sql);
-  const result = await db.select().from(canteens).limit(100);
-  return c.json(result);
+  try {
+    const result = await getAllCanteenRepo(db);
+    if (result.length > 0) {
+      return c.json(result);
+    }
+    return c.json({ message: "canteen not found" }, 404);
+  } catch (error) {
+    return c.json({ message: "internal server error" }, 500);
+  }
 });
 
-canteenRouter.post(
+menuRouter.post(
   "/",
   zValidator(
     "json",
@@ -33,20 +41,23 @@ canteenRouter.post(
     const sql = neon(c.env.DATABASE_URL);
     const db = drizzle(sql);
     const { name, imageUrl } = c.req.valid("json");
-
-    const res = await createCanteenRepo(db, {
-      id: uuidv4(),
-      name,
-      imageUrl,
-    });
-    if (!res) {
+    try {
+      const res = await createCanteenRepo(db, {
+        id: uuidv4(),
+        name,
+        imageUrl,
+      });
+      if (!res) {
+        return c.json({ message: "Internal server error" }, 500);
+      }
+      return c.json({ message: "create canteen success" }, 201);
+    } catch (error) {
       return c.json({ message: "Internal server error" }, 500);
     }
-    return c.json({ message: "create canteen success" }, 201);
   }
 );
 
-canteenRouter.delete(
+menuRouter.delete(
   "/:id",
   zValidator(
     "param",
@@ -71,4 +82,4 @@ canteenRouter.delete(
   }
 );
 
-export default canteenRouter;
+export default menuRouter;
