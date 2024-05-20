@@ -1,33 +1,37 @@
 {
-  "version": "6",
-  "dialect": "sqlite",
-  "id": "73875929-002f-4cbc-86c2-7c31f4155bf6",
+  "id": "274e4206-cf8d-4b1c-9406-139751a820c2",
   "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "6",
+  "dialect": "postgresql",
   "tables": {
-    "canteens": {
+    "public.canteens": {
       "name": "canteens",
+      "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "autoincrement": true
+          "notNull": true
         },
         "name": {
           "name": "name",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": true
         },
-        "timestamp": {
-          "name": "timestamp",
+        "image_url": {
+          "name": "image_url",
           "type": "text",
           "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "default": "CURRENT_TIMESTAMP"
+          "default": "now()"
         }
       },
       "indexes": {},
@@ -35,69 +39,68 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "menus": {
+    "public.menus": {
       "name": "menus",
+      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'e674da07-0677-4f92-b44e-3c6764821fa1'"
+          "notNull": true
         },
-        "canteenId": {
-          "name": "canteenId",
-          "type": "integer",
+        "canteen_id": {
+          "name": "canteen_id",
+          "type": "text",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
+          "notNull": true
         },
         "type": {
           "name": "type",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": true
         },
         "name": {
           "name": "name",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": true
         },
         "price": {
           "name": "price",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": true
+        },
+        "image_url": {
+          "name": "image_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "description": {
           "name": "description",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": false
         },
-        "timestamp": {
-          "name": "timestamp",
-          "type": "text",
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "default": "CURRENT_TIMESTAMP"
+          "default": "now()"
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "menus_canteenId_canteens_id_fk": {
-          "name": "menus_canteenId_canteens_id_fk",
+        "menus_canteen_id_canteens_id_fk": {
+          "name": "menus_canteen_id_canteens_id_fk",
           "tableFrom": "menus",
           "tableTo": "canteens",
           "columnsFrom": [
-            "canteenId"
+            "canteen_id"
           ],
           "columnsTo": [
             "id"
@@ -111,9 +114,10 @@
     }
   },
   "enums": {},
+  "schemas": {},
   "_meta": {
+    "columns": {},
     "schemas": {},
-    "tables": {},
-    "columns": {}
+    "tables": {}
   }
 }

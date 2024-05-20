@@ -1,29 +1,27 @@
 import { sql } from "drizzle-orm";
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { pgTable, integer, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { v4 as uuidv4 } from "uuid";
 
-export const canteens = sqliteTable("canteens", {
-  // id is set on insert, incrementing
-  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
-  // name of the canteen
-  name: text("name").notNull(),
-  // timestamp is set on insert
-  timestamp: text("timestamp")
-    .default(sql`CURRENT_TIMESTAMP`)
-    .notNull(),
+// Definisi tabel canteens
+export const canteens = pgTable("canteens", {
+  id: text("id").primaryKey().notNull(),
+  name: text("name").notNull(), // Changed to text to match the intended type
+  imageUrl: text("image_url"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 export type InsertCanteens = typeof canteens.$inferInsert;
 export type SelectCanteens = typeof canteens.$inferSelect;
 
 // Definisi tabel menus
-export const menus = sqliteTable("menus", {
+export const menus = pgTable("menus", {
   id: text("id").primaryKey().notNull(),
-  canteenId: integer("canteenId").references(() => canteens.id),
+  canteenId: text("canteen_id")
+    .references(() => canteens.id)
+    .notNull(), // Ensure the type matches canteens.id
   type: text("type").notNull(),
   name: text("name").notNull(),
   price: integer("price").notNull(),
-  description: text("description").notNull(),
-  timestamp: text("timestamp")
-    .default(sql`CURRENT_TIMESTAMP`)
-    .notNull(),
+  imageUrl: text("image_url"),
+  description: text("description"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });

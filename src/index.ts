@@ -1,50 +1,33 @@
-import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
-import { z } from "zod";
-import { v4 as uuidv4 } from "uuid";
-import { zValidator } from "@hono/zod-validator";
-import { canteens } from "./db/schema";
-import { createCanteen } from "./repositories/canteens.repository";
+import canteenRouter from "./routes/canteen.routes";
+import { logger } from "hono/logger";
+import { cors } from "hono/cors";
+import { poweredBy } from "hono/powered-by";
+import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { SwaggerUI } from "@hono/swagger-ui";
+import swaggerApp from "./middleware/documentation";
 
 export type Env = {
-  DB: D1Database;
+  DATABASE_URL: string;
+};
+
+export const customLogger = (message: string, ...rest: string[]) => {
+  console.log(message, ...rest);
 };
 
 const app = new Hono<{ Bindings: Env }>();
+app.use(logger(customLogger));
+app.use(poweredBy());
+app.use("*", cors());
 
-app
-  .get("/", (c) => {
-    return c.json({
-      status: true,
-      statusCode: 200,
-      message: "Hello world",
-    });
-  })
-  .get("/canteens", async (c) => {
-    const db = drizzle(c.env.DB);
-    const result = await db.select().from(canteens).all();
-    return c.json(result);
-  })
-  .post(
-    "/canteens",
-    zValidator(
-      "json",
-      z.object({
-        name: z.string().min(1).max(255),
-      })
-    ),
-    async (c) => {
-      const db = drizzle(c.env.DB);
-      const { name } = c.req.valid("json");
+app.route("/canteens", canteenRouter);
 
-      const res = await createCanteen(db, {
-        name,
-      });
-      if (!res) {
-        return c.json({ message: "Internal server error" }, 500);
-      }
-      return c.json({ message: "create canteen success" }, 201);
-    }
-  );
+app.get("/", (c) => {
+  return c.json({
+    status: true,
+    statusCode: 200,
+    message: "Hello world",
+  });
+});
 
 export default app;
