@@ -3,7 +3,7 @@ import { InsertCanteens, SelectCanteens, canteens } from "../db/schema";
 import { eq } from "drizzle-orm";
 
 export async function getAllCanteenRepo(
-  db: DrizzleD1Database,
+  db: any,
   canteenId: string
 ): Promise<SelectCanteens[]> {
   return await db.select().from(canteens).where(eq(canteens.name, canteenId));
