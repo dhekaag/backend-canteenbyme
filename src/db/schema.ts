@@ -11,6 +11,7 @@ export const canteens = pgTable("canteens", {
   id: text("id").primaryKey().notNull(),
   name: text("name").notNull(), // Changed to text to match the intended type
   imageUrl: text("image_url"),
+  updateAt: timestamp("update_at").notNull().defaultNow(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -26,10 +27,12 @@ export const menus = pgTable("menus", {
   signature: boolean("signature").notNull().default(false),
   imageUrl: text("image_url"),
   description: text("description"),
+  updateAt: timestamp("update_at").notNull().defaultNow(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export type InsertCanteens = typeof canteens.$inferInsert;
 export type SelectCanteens = typeof canteens.$inferSelect;
+export type UpdateCanteens = typeof canteens.$inferSelect;
 export type InsertMenus = typeof menus.$inferInsert;
 export type SelectMenus = typeof menus.$inferSelect;

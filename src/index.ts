@@ -6,6 +6,7 @@ import { poweredBy } from "hono/powered-by";
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { SwaggerUI } from "@hono/swagger-ui";
 import swaggerApp from "./middleware/documentation";
+import menuRouter from "./api/menu.api";
 
 export type Env = {
   DATABASE_URL: string;
@@ -21,6 +22,7 @@ app.use(poweredBy());
 app.use("*", cors());
 
 app.route("/canteens", canteenRouter);
+app.route("/menus", menuRouter);
 
 app.get("/", (c) => {
   return c.json({

@@ -6,6 +6,8 @@ import {
   createCanteenRepo,
   deleteCanteenRepo,
   getAllCanteenRepo,
+  getAllCanteensWithSignatureMenus,
+  updateCanteenRepo,
 } from "../repositories/canteen.repository";
 import { Hono } from "hono";
 import { Env } from "..";
@@ -18,13 +20,24 @@ canteenRouter.get("/", async (c) => {
   const sql = neon(c.env.DATABASE_URL);
   const db = drizzle(sql);
   try {
-    const result = await getAllCanteenRepo(db);
+    const result = await getAllCanteensWithSignatureMenus(db);
     if (result.length > 0) {
-      return c.json(result);
+      return c.json({
+        status: true,
+        statusCode: 200,
+        count: result.length,
+        data: result,
+      });
     }
-    return c.json({ message: "canteen not found" }, 404);
+    return c.json(
+      { status: false, statusCode: 404, message: "canteen not found" },
+      404
+    );
   } catch (error) {
-    return c.json({ message: "internal server error" }, 500);
+    return c.json(
+      { status: false, statusCode: 500, message: "Internal server error" },
+      500
+    );
   }
 });
 
@@ -48,11 +61,63 @@ canteenRouter.post(
         imageUrl,
       });
       if (!res) {
-        return c.json({ message: "Internal server error" }, 500);
+        return c.json(
+          { status: false, statusCode: 500, message: "Internal server error" },
+          500
+        );
       }
-      return c.json({ message: "create canteen success" }, 201);
+      return c.json(
+        { status: true, statusCode: 201, message: "create canteen success" },
+        201
+      );
     } catch (error) {
-      return c.json({ message: "Internal server error" }, 500);
+      return c.json(
+        { status: false, statusCode: 500, message: "Internal server error" },
+        500
+      );
+    }
+  }
+);
+
+canteenRouter.put(
+  "/",
+  zValidator(
+    "json",
+    z.object({
+      id: z.string().min(1).max(100),
+      name: z.string().min(1).max(100).nullable(),
+      imageUrl: z.string().url().nullable().default(null),
+    })
+  ),
+  async (c) => {
+    const { id, name, imageUrl } = c.req.valid("json");
+    const nameChecked = name ?? undefined;
+    const sql = neon(c.env.DATABASE_URL);
+    const db = drizzle(sql);
+
+    try {
+      const res = await updateCanteenRepo(db, id, {
+        name: nameChecked,
+        imageUrl,
+      });
+      if (res === null) {
+        return c.json({ message: "update failed" }, 500);
+      }
+      return c.json(
+        {
+          status: true,
+          statusCode: 200,
+          message: "Update canteen success",
+          data: res,
+        },
+        200
+      );
+    } catch (error) {
+      console.error("Error updating canteen:", error);
+      return c.json(
+        { status: false, statusCode: 500, message: "Internal server error" },
+        500
+      );
     }
   }
 );
@@ -74,10 +139,16 @@ canteenRouter.delete(
       if (!res) {
         return c.json({ message: "Canteen not found" }, 404);
       } else {
-        return c.json({ message: "canteen deleted success" }, 200);
+        return c.json(
+          { status: true, statusCode: 200, message: "canteen deleted success" },
+          200
+        );
       }
     } catch (error) {
-      return c.json({ message: "internal Server error" }, 500);
+      return c.json(
+        { status: false, statusCode: 500, message: "internal Server error" },
+        500
+      );
     }
   }
 );

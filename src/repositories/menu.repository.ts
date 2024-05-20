@@ -1,3 +1,4 @@
+import { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { InsertMenus, SelectMenus, menus } from "../db/schema";
 import { eq } from "drizzle-orm";
 
@@ -6,7 +7,7 @@ export const getAllMenuRepo = async (db: any): Promise<SelectMenus[]> => {
 };
 
 export const createMenuRepo = async (
-  db: any,
+  db: NeonHttpDatabase,
   data: InsertMenus
 ): Promise<boolean> => {
   try {
@@ -17,7 +18,11 @@ export const createMenuRepo = async (
     return false;
   }
 };
-export const deleteMenuRepo = async (db: any, id: string): Promise<boolean> => {
+
+export const deleteMenuRepo = async (
+  db: NeonHttpDatabase,
+  id: string
+): Promise<boolean> => {
   try {
     const res = await db
       .delete(menus)
