@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import canteenRouter from "./routes/canteen.routes";
+import canteenRouter from "./api/canteen.api";
 import { logger } from "hono/logger";
 import { cors } from "hono/cors";
 import { poweredBy } from "hono/powered-by";

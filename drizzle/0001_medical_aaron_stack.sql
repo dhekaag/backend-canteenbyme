@@ -1,0 +1,1 @@
+ALTER TABLE "menus" ADD COLUMN "signature" boolean DEFAULT false NOT NULL;

@@ -1,13 +1,9 @@
-import { DrizzleD1Database } from "drizzle-orm/d1";
 import { InsertCanteens, SelectCanteens, canteens } from "../db/schema";
 import { eq } from "drizzle-orm";
 
-export async function getAllCanteenRepo(
-  db: any,
-  canteenId: string
-): Promise<SelectCanteens[]> {
-  return await db.select().from(canteens).where(eq(canteens.name, canteenId));
-}
+export const getAllCanteenRepo = async (db: any): Promise<SelectCanteens[]> => {
+  return await db.select().from(canteens);
+};
 
 export const createCanteenRepo = async (
   db: any,
