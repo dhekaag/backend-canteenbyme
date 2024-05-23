@@ -1,6 +1,6 @@
 {
-  "id": "5e81ae48-c973-4930-aab3-c00603a4f51b",
-  "prevId": "0d0060fa-25c8-4154-bbf1-e6d7a8a8f260",
+  "id": "ea22b68c-2e3e-436a-bf0a-c9157ef76613",
+  "prevId": "6fa32899-daa0-4e67-93b6-1e5e358bd4da",
   "version": "6",
   "dialect": "postgresql",
   "tables": {
@@ -25,6 +25,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'open'"
         },
         "update_at": {
           "name": "update_at",

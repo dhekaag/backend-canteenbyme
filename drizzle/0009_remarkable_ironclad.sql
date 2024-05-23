@@ -1,0 +1,1 @@
+ALTER TABLE "canteens" DROP COLUMN IF EXISTS "status";

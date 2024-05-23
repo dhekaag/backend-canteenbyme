@@ -6,6 +6,17 @@ export const getAllMenuRepo = async (db: any): Promise<SelectMenus[]> => {
   return await db.select().from(menus).limit(100);
 };
 
+export const getMenuWithCanteenIdRepo = async (
+  db: any,
+  canteenId: string
+): Promise<SelectMenus[]> => {
+  return await db
+    .select()
+    .from(menus)
+    .where(eq(menus.canteenId, canteenId))
+    .limit(100);
+};
+
 export const createMenuRepo = async (
   db: NeonHttpDatabase,
   data: InsertMenus

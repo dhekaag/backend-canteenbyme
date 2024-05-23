@@ -9,8 +9,9 @@ import {
 // Definisi tabel canteens
 export const canteens = pgTable("canteens", {
   id: text("id").primaryKey().notNull(),
-  name: text("name").notNull(), // Changed to text to match the intended type
+  name: text("name").notNull(),
   imageUrl: text("image_url"),
+  open: boolean("open").notNull().default(true),
   updateAt: timestamp("update_at").notNull().defaultNow(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
@@ -20,7 +21,7 @@ export const menus = pgTable("menus", {
   id: text("id").primaryKey().notNull(),
   canteenId: text("canteen_id")
     .references(() => canteens.id)
-    .notNull(), // Ensure the type matches canteens.id
+    .notNull(),
   type: text("type").notNull(),
   name: text("name").notNull(),
   price: integer("price").notNull(),

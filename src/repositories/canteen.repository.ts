@@ -3,42 +3,43 @@ import {
   InsertCanteens,
   SelectCanteens,
   UpdateCanteens,
-  canteens,
-  menus,
+  canteens as canteenSchema,
+  menus as menuSchema,
 } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import { union } from "zod";
 
 export const getAllCanteenRepo = async (db: any): Promise<SelectCanteens[]> => {
-  return await db.select().from(canteens);
+  return await db.select().from(canteenSchema);
 };
 
 export const getAllCanteensWithSignatureMenus = async (
-  db: NeonHttpDatabase
+  db: NeonHttpDatabase<{}>
 ): Promise<any[]> => {
-  const result = await db
-    .select({
-      canteenId: canteens.id,
-      canteenName: canteens.name,
-      canteenImageUrl: canteens.imageUrl,
-      createdAt: canteens.createdAt,
-      signatureMenus: {
-        menuName: menus.name,
-        menuPrice: menus.price,
-        menuDescription: menus.description,
-        menuImageUrl: menus.imageUrl,
-      },
-    })
-    .from(canteens)
-    .leftJoin(menus, eq(menus.canteenId, canteens.id))
-    .where(eq(menus.signature, true));
+  const resCanteens = await db.select().from(canteenSchema);
+  const getSignatureMenu = async (canteenId: string) => {
+    const menus = await db
+      .select({ name: menuSchema.name })
+      .from(menuSchema)
+      .where(
+        and(eq(menuSchema.canteenId, canteenId), eq(menuSchema.signature, true))
+      );
+    return menus.map((menu) => menu.name);
+  };
 
-  return result.map((row) => ({
-    id: row.canteenId,
-    name: row.canteenName,
-    imageUrl: row.canteenImageUrl,
-    createdAt: row.createdAt,
-    signatureMenus: row.signatureMenus,
-  }));
+  // Menggunakan Promise.all untuk menunggu semua `getSignatureMenu` selesai
+  const canteensWithMenus = await Promise.all(
+    resCanteens.map(async (row) => ({
+      id: row.id,
+      name: row.name,
+      imageUrl: row.imageUrl,
+      open: row.open,
+      createdAt: row.createdAt,
+      signatureMenu: await getSignatureMenu(row.id), // Memastikan await digunakan di sini
+    }))
+  );
+
+  return canteensWithMenus;
 };
 
 export const createCanteenRepo = async (
@@ -46,7 +47,7 @@ export const createCanteenRepo = async (
   data: InsertCanteens
 ): Promise<boolean> => {
   try {
-    await db.insert(canteens).values(data);
+    await db.insert(canteenSchema).values(data);
     return true;
   } catch (error) {
     console.error("Failed to create canteen:", error);
@@ -64,9 +65,9 @@ export const updateCanteenRepo = async (
       Object.entries(data).filter(([_, v]) => v !== null)
     );
     const res = await db
-      .update(canteens)
+      .update(canteenSchema)
       .set(updateData)
-      .where(eq(canteens.id, id))
+      .where(eq(canteenSchema.id, id))
       .returning();
     return res;
   } catch (error) {
@@ -81,9 +82,9 @@ export const deleteCanteenRepo = async (
 ): Promise<boolean> => {
   try {
     const res = await db
-      .delete(canteens)
-      .where(eq(canteens.id, id))
-      .returning({ canteen_id: canteens.id });
+      .delete(canteenSchema)
+      .where(eq(canteenSchema.id, id))
+      .returning({ canteen_id: canteenSchema.id });
     if (res.length > 0) {
       return true;
     }

@@ -1,0 +1,1 @@
+ALTER TABLE "canteens" ADD COLUMN "status" text DEFAULT 'open' NOT NULL;
