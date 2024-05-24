@@ -1,9 +1,14 @@
 import { NeonHttpDatabase } from "drizzle-orm/neon-http";
-import { InsertMenus, SelectMenus, menus } from "../db/schema";
+import {
+  InsertMenus,
+  SelectMenus,
+  UpdateMenus,
+  menus as menuSchema,
+} from "../db/schema";
 import { eq } from "drizzle-orm";
 
 export const getAllMenuRepo = async (db: any): Promise<SelectMenus[]> => {
-  return await db.select().from(menus).limit(100);
+  return await db.select().from(menuSchema).limit(100);
 };
 
 export const getMenuWithCanteenIdRepo = async (
@@ -12,8 +17,8 @@ export const getMenuWithCanteenIdRepo = async (
 ): Promise<SelectMenus[]> => {
   return await db
     .select()
-    .from(menus)
-    .where(eq(menus.canteenId, canteenId))
+    .from(menuSchema)
+    .where(eq(menuSchema.canteenId, canteenId))
     .limit(100);
 };
 
@@ -22,11 +27,32 @@ export const createMenuRepo = async (
   data: InsertMenus
 ): Promise<boolean> => {
   try {
-    await db.insert(menus).values(data);
+    await db.insert(menuSchema).values(data);
     return true;
   } catch (error) {
     console.error("Failed to create Menu:", error);
     return false;
+  }
+};
+
+export const updateMenuRepo = async (
+  db: NeonHttpDatabase,
+  id: string,
+  data: Partial<UpdateMenus>
+): Promise<UpdateMenus[] | null> => {
+  try {
+    const updateData = Object.fromEntries(
+      Object.entries(data).filter(([_, v]) => v !== null)
+    );
+    const res = await db
+      .update(menuSchema)
+      .set(updateData)
+      .where(eq(menuSchema.id, id))
+      .returning();
+    return res;
+  } catch (error) {
+    console.error("Failed to update canteen:", error);
+    throw error;
   }
 };
 
@@ -36,9 +62,9 @@ export const deleteMenuRepo = async (
 ): Promise<boolean> => {
   try {
     const res = await db
-      .delete(menus)
-      .where(eq(menus.id, id))
-      .returning({ menu_id: menus.id });
+      .delete(menuSchema)
+      .where(eq(menuSchema.id, id))
+      .returning({ menu_id: menuSchema.id });
     if (res.length > 0) {
       return true;
     }
