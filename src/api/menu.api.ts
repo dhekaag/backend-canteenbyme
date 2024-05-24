@@ -26,7 +26,12 @@ menuRouter.get("/", async (c) => {
   try {
     const result = await getAllMenuRepo(db);
     if (result.length > 0) {
-      return c.json({ status: true, statusCode: 200, data: result });
+      return c.json({
+        status: true,
+        statusCode: 200,
+        count: result.length,
+        data: result,
+      });
     }
     return c.json(
       { status: false, statusCode: 404, message: "menu not found" },
