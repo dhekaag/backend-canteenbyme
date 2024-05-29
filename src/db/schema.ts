@@ -32,6 +32,20 @@ export const menus = pgTable("menus", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Definisi tabel transactions
+// export const transactions = pgTable("", {
+//   id: text("id").primaryKey().notNull(),
+//   canteenId: text("canteen_id")
+//     .references(() => canteens.id)
+//     .notNull(),
+//   userName: text("user_name").notNull(),
+//   totalPrice: integer("total_price").notNull(),
+//   imageUrl: text("image_url"),
+//   description: text("description"),
+//   updateAt: timestamp("update_at").notNull().defaultNow(),
+//   createdAt: timestamp("created_at").notNull().defaultNow(),
+// });
+
 export type InsertCanteens = typeof canteens.$inferInsert;
 export type SelectCanteens = typeof canteens.$inferSelect;
 export type UpdateCanteens = typeof canteens.$inferSelect;
