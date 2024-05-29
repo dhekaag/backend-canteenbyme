@@ -35,9 +35,6 @@ export const menus = pgTable("menus", {
 // Definisi tabel transactions
 // export const transactions = pgTable("", {
 //   id: text("id").primaryKey().notNull(),
-//   canteenId: text("canteen_id")
-//     .references(() => canteens.id)
-//     .notNull(),
 //   userName: text("user_name").notNull(),
 //   totalPrice: integer("total_price").notNull(),
 //   imageUrl: text("image_url"),
