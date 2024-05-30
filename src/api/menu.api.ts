@@ -8,7 +8,6 @@ import {
   getAllCanteenRepo,
 } from "../repositories/canteen.repository";
 import { Hono } from "hono";
-import { Env } from "..";
 import { v4 as uuidv4 } from "uuid";
 import { neon } from "@neondatabase/serverless";
 import {
@@ -17,6 +16,7 @@ import {
   getAllMenuRepo,
   updateMenuRepo,
 } from "../repositories/menu.repository";
+import { Env } from "../utils/config.env";
 
 const menuRouter = new Hono<{ Bindings: Env }>();
 

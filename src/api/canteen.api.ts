@@ -10,16 +10,16 @@ import {
   updateCanteenRepo,
 } from "../repositories/canteen.repository";
 import { Hono } from "hono";
-import { Env } from "..";
 import { v4 as uuidv4 } from "uuid";
 import { neon } from "@neondatabase/serverless";
 import { getMenuWithCanteenIdRepo } from "../repositories/menu.repository";
+import { configDb } from "../db/config";
+import { Env } from "../utils/config.env";
 
 const canteenRouter = new Hono<{ Bindings: Env }>();
 
 canteenRouter.get("/", async (c) => {
-  const sql = neon(c.env.DATABASE_URL);
-  const db = drizzle(sql);
+  const db = configDb(c);
   try {
     const result = await getAllCanteensWithSignatureMenus(db);
     if (result.length > 0) {
