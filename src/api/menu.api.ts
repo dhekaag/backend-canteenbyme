@@ -1,15 +1,9 @@
-import { drizzle } from "drizzle-orm/neon-http";
-import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
-import { canteens } from "../db/schema";
-import {
-  createCanteenRepo,
-  deleteCanteenRepo,
-  getAllCanteenRepo,
-} from "../repositories/canteen.repository";
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
 import { Hono } from "hono";
 import { v4 as uuidv4 } from "uuid";
-import { neon } from "@neondatabase/serverless";
+import { z } from "zod";
 import {
   createMenuRepo,
   deleteMenuRepo,

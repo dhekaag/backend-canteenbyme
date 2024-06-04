@@ -1,6 +1,6 @@
-import { Hono } from "hono";
-import { Env } from "..";
+// import { Hono } from "hono";
+// import { Env } from "..";
 
-export const searchRouter = new Hono<{ Bindings: Env }>();
+// export const searchRouter = new Hono<{ Bindings: Env }>();
 
-searchRouter.post("/", async (c) => {});
+// searchRouter.post("/", async (c) => {});

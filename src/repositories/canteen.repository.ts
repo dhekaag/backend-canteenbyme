@@ -27,7 +27,6 @@ export const getAllCanteensWithSignatureMenus = async (
     return menus.map((menu) => menu.name);
   };
 
-  // Menggunakan Promise.all untuk menunggu semua `getSignatureMenu` selesai
   const canteensWithMenus = await Promise.all(
     resCanteens.map(async (row) => ({
       id: row.id,
@@ -35,7 +34,7 @@ export const getAllCanteensWithSignatureMenus = async (
       imageUrl: row.imageUrl,
       open: row.open,
       createdAt: row.createdAt,
-      signatureMenu: await getSignatureMenu(row.id), // Memastikan await digunakan di sini
+      signatureMenu: await getSignatureMenu(row.id),
     }))
   );
 
