@@ -7,7 +7,7 @@ import menuRouter from "./api/menu.api";
 import { Env } from "./utils/config.env";
 import { authRouter } from "./middleware/authentication";
 
-const app = new Hono<{ Bindings: Env }>().basePath("/api");
+const app = new Hono<{ Bindings: Env }>();
 
 export const customLogger = (message: string, ...rest: string[]) => {
   console.log(message, ...rest);
@@ -29,8 +29,17 @@ app.get("/", (c) => {
     message: "Hello world",
   });
 });
-
-export default {
-  port: 8080,
+const server = Bun.serve({
+  hostname: "::",
+  port: process.env.PORT ?? 3000,
   fetch: app.fetch,
-};
+  // fetch(request) {
+  //   return new Response("Welcome to Bun!");
+  // },
+});
+
+console.log(`Listening on http://localhost:${server.port}`);
+// export default {
+//   port: 8080,
+//   fetch: app.fetch,
+// };
