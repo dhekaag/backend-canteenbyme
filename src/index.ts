@@ -7,7 +7,7 @@ import menuRouter from "./api/menu.api";
 import { Env } from "./utils/config.env";
 import { authRouter } from "./middleware/authentication";
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env }>().basePath("/api");
 
 export const customLogger = (message: string, ...rest: string[]) => {
   console.log(message, ...rest);
@@ -30,6 +30,7 @@ app.get("/", (c) => {
   });
 });
 
-app.fire();
-
-export default app;
+export default {
+  port: 8080,
+  fetch: app.fetch,
+};

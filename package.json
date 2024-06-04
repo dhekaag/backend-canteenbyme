@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "dev": "wrangler dev src/index.ts",
+    "dev": "bun run --hot src/index.ts",
     "deploy": "wrangler deploy --minify src/index.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",

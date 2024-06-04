@@ -19,7 +19,8 @@ import { Env } from "../utils/config.env";
 const canteenRouter = new Hono<{ Bindings: Env }>();
 
 canteenRouter.get("/", async (c) => {
-  const db = configDb(c);
+  const sql = neon(process.env.DATABASE_URL ?? "");
+  const db = drizzle(sql);
   try {
     const result = await getAllCanteensWithSignatureMenus(db);
     if (result.length > 0) {
@@ -52,7 +53,7 @@ canteenRouter.get(
   ),
   async (c) => {
     const { id } = c.req.valid("param");
-    const sql = neon(c.env.DATABASE_URL);
+    const sql = neon(process.env.DATABASE_URL ?? "");
     const db = drizzle(sql);
     try {
       const result = await getMenuWithCanteenIdRepo(db, id);
@@ -87,7 +88,7 @@ canteenRouter.post(
     })
   ),
   async (c) => {
-    const sql = neon(c.env.DATABASE_URL);
+    const sql = neon(process.env.DATABASE_URL ?? "");
     const db = drizzle(sql);
     const { name, imageUrl } = c.req.valid("json");
     try {
@@ -130,7 +131,7 @@ canteenRouter.put(
     const { id, name, imageUrl, open } = c.req.valid("json");
     const nameChecked = name ?? undefined;
     const openChecked = open ?? undefined;
-    const sql = neon(c.env.DATABASE_URL);
+    const sql = neon(process.env.DATABASE_URL ?? "");
     const db = drizzle(sql);
 
     try {
@@ -170,7 +171,7 @@ canteenRouter.delete(
     })
   ),
   async (c) => {
-    const sql = neon(c.env.DATABASE_URL);
+    const sql = neon(process.env.DATABASE_URL ?? "");
     const db = drizzle(sql);
     const { id } = c.req.valid("param");
     try {

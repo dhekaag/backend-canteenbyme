@@ -15,7 +15,7 @@ import { Env } from "../utils/config.env";
 const menuRouter = new Hono<{ Bindings: Env }>();
 
 menuRouter.get("/", async (c) => {
-  const sql = neon(c.env.DATABASE_URL);
+  const sql = neon(process.env.DATABASE_URL ?? "");
   const db = drizzle(sql);
   try {
     const result = await getAllMenuRepo(db);
@@ -54,7 +54,7 @@ menuRouter.post(
     })
   ),
   async (c) => {
-    const sql = neon(c.env.DATABASE_URL);
+    const sql = neon(process.env.DATABASE_URL ?? "");
     const db = drizzle(sql);
     const { name, imageUrl, type, canteenId, price, description, signature } =
       c.req.valid("json");
@@ -107,7 +107,7 @@ menuRouter.put(
     const signatureChecked = signature ?? undefined;
     const imageUrlChecked = imageUrl ?? undefined;
     const descriptionChecked = description ?? undefined;
-    const sql = neon(c.env.DATABASE_URL);
+    const sql = neon(process.env.DATABASE_URL ?? "");
     const db = drizzle(sql);
 
     try {
@@ -150,7 +150,7 @@ menuRouter.delete(
     })
   ),
   async (c) => {
-    const sql = neon(c.env.DATABASE_URL);
+    const sql = neon(process.env.DATABASE_URL ?? "");
     const db = drizzle(sql);
     const { id } = c.req.valid("param");
     try {
