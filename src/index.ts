@@ -6,6 +6,7 @@ import canteenRouter from "./api/canteen.api";
 import menuRouter from "./api/menu.api";
 import { Env } from "./utils/config.env";
 import { authRouter } from "./middleware/authentication";
+import orderRouter from "./api/order.api";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -20,7 +21,7 @@ app.use("*", cors());
 app.route("/auth", authRouter);
 app.route("/canteens", canteenRouter);
 app.route("/menus", menuRouter);
-app.route("/orders", menuRouter);
+app.route("/orders", orderRouter);
 
 app.get("/", (c) => {
   return c.json({
@@ -29,16 +30,14 @@ app.get("/", (c) => {
     message: "Hello world",
   });
 });
+
 const server = Bun.serve({
   hostname: "::",
   port: process.env.PORT ?? 3000,
   fetch: app.fetch,
-  // fetch(request) {
-  //   return new Response("Welcome to Bun!");
-  // },
 });
-
 console.log(`Listening on http://localhost:${server.port}`);
+
 // export default {
 //   port: 8080,
 //   fetch: app.fetch,

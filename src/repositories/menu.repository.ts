@@ -5,10 +5,20 @@ import {
   UpdateMenus,
   menus as menuSchema,
 } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { eq, ilike, inArray } from "drizzle-orm";
 
 export const getAllMenuRepo = async (db: any): Promise<SelectMenus[]> => {
   return await db.select().from(menuSchema).limit(100);
+};
+
+export const getMenuWithIdRepo = async (
+  db: NeonHttpDatabase,
+  menuId: string[]
+): Promise<SelectMenus[]> => {
+  return await db
+    .select()
+    .from(menuSchema)
+    .where(inArray(menuSchema.id, menuId));
 };
 
 export const getMenuWithCanteenIdRepo = async (

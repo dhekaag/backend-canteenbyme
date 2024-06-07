@@ -53,3 +53,6 @@ export type UpdateCanteens = typeof canteens.$inferSelect;
 export type InsertMenus = typeof menus.$inferInsert;
 export type SelectMenus = typeof menus.$inferSelect;
 export type UpdateMenus = typeof menus.$inferSelect;
+export type InsertOrder = typeof orders.$inferInsert;
+export type SelectOrder = typeof orders.$inferSelect;
+export type UpdateOrder = typeof orders.$inferSelect;
