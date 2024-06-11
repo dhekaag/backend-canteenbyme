@@ -9,8 +9,15 @@ import { xenditInvoiceClient } from "../utils/xendit.services";
 import { CreateInvoiceRequest } from "xendit-node/invoice/models/CreateInvoiceRequest";
 import { SelectMenus } from "../db/schema";
 import { Invoice, InvoiceItem } from "xendit-node/invoice/models";
+import { OrderIdGenerator } from "../utils/id.generator";
+import {
+  createOrderRepo,
+  updateOrderRepo,
+} from "../repositories/order.repository";
 
 const orderRouter = new Hono<{ Bindings: Env }>();
+
+const orderIdGenerator = new OrderIdGenerator(100);
 
 const menusSchema = z.object({
   id: z.string(),
@@ -24,6 +31,7 @@ orderRouter.post(
     z.object({
       userName: z.string().min(1).max(100),
       userEmail: z.string().min(1).max(100),
+      tableNumber: z.number().min(1).max(100),
       orderMenus: z.array(menusSchema),
       redirectUrl: z.string().optional(),
       description: z.string().optional(),
@@ -33,8 +41,15 @@ orderRouter.post(
   async (c) => {
     const sql = neon(Bun.env.DATABASE_URL ?? "");
     const db = drizzle(sql);
-    const { userName, userEmail, orderMenus, redirectUrl, description, fees } =
-      c.req.valid("json");
+    const {
+      userName,
+      userEmail,
+      orderMenus,
+      redirectUrl,
+      description,
+      fees,
+      tableNumber,
+    } = c.req.valid("json");
 
     const menuId = orderMenus.map((menu) => menu.id);
     try {
@@ -60,28 +75,18 @@ orderRouter.post(
           (sum, item) => sum + item.price * item.quantity,
           0
         );
-        const currentDate = new Date();
-        const formattedDate = `${String(currentDate.getDate()).padStart(
-          2,
-          "0"
-        )} - ${String(currentDate.getMonth() + 1).padStart(2, "0")} - ${String(
-          currentDate.getFullYear()
-        ).slice(-2)}, ${String(currentDate.getHours()).padStart(
-          2,
-          "0"
-        )}:${String(currentDate.getMinutes()).padStart(2, "0")}`;
-
+        const orderId = orderIdGenerator.nextId();
         const data: CreateInvoiceRequest = {
-          externalId: `Pesanan pada tanggal ${formattedDate}`,
+          externalId: `Meja:${tableNumber},nomor pesananan:C${orderId}`,
           description: description,
           currency: "IDR",
           amount: totalPrice,
           fees: [
-          {
-            type: 'ADMIN',
-            value: fees ?? 0,
-          },
-        ],
+            {
+              type: "ADMIN",
+              value: fees ?? 0,
+            },
+          ],
           invoiceDuration: "12000",
           customer: {
             givenNames: userName,
@@ -102,22 +107,81 @@ orderRouter.post(
         );
         console.log("🚀 ~ xenditResponse:", xenditResponse);
         if (xenditResponse) {
-          return c.json(
-            {
-              status: true,
-              statusCode: 201,
-              data: {
-                invoiceId: xenditResponse.id,
-                invoiceUrl: xenditResponse.invoiceUrl,
+          const createOrder = await createOrderRepo(db, {
+            id: xenditResponse.id!!,
+            externalId: xenditResponse.externalId,
+            userName: userName,
+            userEmail: userEmail,
+            menus: menuId,
+            payment_method: xenditResponse.paymentMethod!!,
+            status: xenditResponse.status,
+            totalItem: orderMenus.length,
+            totalPrice: totalPrice,
+            updatedAt: xenditResponse.updated,
+            createdAt: xenditResponse.created,
+          });
+          if (createOrder) {
+            return c.json(
+              {
+                status: true,
+                statusCode: 201,
+                data: {
+                  invoiceId: xenditResponse.id,
+                  invoiceUrl: xenditResponse.invoiceUrl,
+                },
               },
-            },
-            201
-          );
+              201
+            );
+          }
         }
       }
     } catch (error) {
       return c.json(
-        { status: false, statusCode: 500, message: "Internal server error" },
+        { status: false, statusCode: 500, message: "create invoice error" },
+        500
+      );
+    }
+  }
+);
+orderRouter.post(
+  "/invoice/callback",
+  zValidator(
+    "json",
+    z.object({
+      id: z.string().min(1).max(100),
+      status: z.string(),
+      updated: z.date(),
+      paid_at: z.date().optional(),
+
+      external_id: z.string().optional(),
+      ewallet_type: z.string().optional(),
+    })
+  ),
+  async (c) => {
+    const { id, updated, status, ewallet_type, paid_at } = c.req.valid("json");
+    try {
+      const sql = neon(Bun.env.DATABASE_URL ?? "");
+      const db = drizzle(sql);
+      const updateOrder = await updateOrderRepo(db, id, {
+        status: status,
+        payment_method: ewallet_type,
+        paidAt: paid_at,
+        updatedAt: updated,
+      });
+      if (updateOrder !== null) {
+        return c.json(
+          {
+            status: false,
+            statusCode: 500,
+            message: "update order success",
+            data: updateOrder,
+          },
+          200
+        );
+      }
+    } catch (error) {
+      return c.json(
+        { status: false, statusCode: 500, message: "update order error" },
         500
       );
     }
@@ -140,12 +204,8 @@ orderRouter.get(
       const result: Invoice = await xenditInvoiceClient.getInvoiceById({
         invoiceId: id,
       });
-      if (!result) {
-        return c.json(
-          { status: false, statusCode: 404, message: "invoice not found" },
-          404
-        );
-      }
+      console.log("🚀 ~ result:", result);
+
       return c.json(
         {
           status: true,
@@ -167,9 +227,11 @@ orderRouter.get(
         200
       );
     } catch (error) {
+      console.log("🚀 ~ error:", error);
+
       return c.json(
-        { status: false, statusCode: 500, message: "Internal server error" },
-        500
+        { status: false, statusCode: 404, message: "Invoice not found" },
+        404
       );
     }
   }
