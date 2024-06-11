@@ -1,4 +1,7 @@
+import { eq } from "drizzle-orm";
 import { NeonHttpDatabase } from "drizzle-orm/neon-http";
+import { Context } from "hono";
+import { configDb } from "../db/config";
 import {
   InsertCanteens,
   SelectCanteens,
@@ -6,46 +9,52 @@ import {
   canteens as canteenSchema,
   menus as menuSchema,
 } from "../db/schema";
-import { and, eq } from "drizzle-orm";
-import { union } from "zod";
 
-export const getAllCanteenRepo = async (db: any): Promise<SelectCanteens[]> => {
-  return await db.select().from(canteenSchema);
+export const getAllCanteenRepo = async (
+  c: Context
+): Promise<SelectCanteens[]> => {
+  const db = configDb(c);
+  return await db.query.canteens.findMany({ limit: 100 });
 };
 
 export const getAllCanteensWithSignatureMenus = async (
-  db: NeonHttpDatabase<{}>
+  c: Context
 ): Promise<any[]> => {
-  const resCanteens = await db.select().from(canteenSchema);
-  const getSignatureMenu = async (canteenId: string) => {
-    const menus = await db
-      .select({ name: menuSchema.name })
-      .from(menuSchema)
-      .where(
-        and(eq(menuSchema.canteenId, canteenId), eq(menuSchema.signature, true))
-      );
-    return menus.map((menu) => menu.name);
-  };
+  const db = configDb(c);
+  const resCanteens = await db.query.canteens.findMany({
+    columns: {
+      id: true,
+      name: true,
+      imageUrl: true,
+      open: true,
+      createdAt: true,
+    },
+    with: {
+      menus: {
+        columns: {
+          name: true,
+        },
+        where: (menus, { eq }) => eq(menus.signature, true),
+      },
+    },
+  });
 
-  const canteensWithMenus = await Promise.all(
-    resCanteens.map(async (row) => ({
-      id: row.id,
-      name: row.name,
-      imageUrl: row.imageUrl,
-      open: row.open,
-      createdAt: row.createdAt,
-      signatureMenu: await getSignatureMenu(row.id),
-    }))
-  );
-
-  return canteensWithMenus;
+  return resCanteens.map((row) => ({
+    id: row.id,
+    name: row.name,
+    imageUrl: row.imageUrl,
+    open: row.open,
+    createdAt: row.createdAt,
+    signatureMenu: row.menus.map((menu) => menu.name),
+  }));
 };
 
 export const createCanteenRepo = async (
-  db: NeonHttpDatabase,
+  c: Context,
   data: InsertCanteens
 ): Promise<boolean> => {
   try {
+    const db = configDb(c);
     await db.insert(canteenSchema).values(data);
     return true;
   } catch (error) {
@@ -55,11 +64,12 @@ export const createCanteenRepo = async (
 };
 
 export const updateCanteenRepo = async (
-  db: NeonHttpDatabase,
+  c: Context,
   id: string,
   data: Partial<UpdateCanteens>
 ): Promise<UpdateCanteens[] | null> => {
   try {
+    const db = configDb(c);
     const updateData = Object.fromEntries(
       Object.entries(data).filter(([_, v]) => v !== null)
     );
@@ -76,10 +86,11 @@ export const updateCanteenRepo = async (
 };
 
 export const deleteCanteenRepo = async (
-  db: NeonHttpDatabase,
+  c: Context,
   id: string
 ): Promise<boolean> => {
   try {
+    const db = configDb(c);
     const res = await db
       .delete(canteenSchema)
       .where(eq(canteenSchema.id, id))

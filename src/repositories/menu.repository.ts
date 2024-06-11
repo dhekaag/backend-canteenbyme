@@ -1,42 +1,46 @@
+import { eq, inArray } from "drizzle-orm";
 import { NeonHttpDatabase } from "drizzle-orm/neon-http";
+import { Context } from "hono";
 import {
   InsertMenus,
   SelectMenus,
   UpdateMenus,
   menus as menuSchema,
 } from "../db/schema";
-import { eq, ilike, inArray } from "drizzle-orm";
+import { configDb } from "../db/config";
 
-export const getAllMenuRepo = async (db: any): Promise<SelectMenus[]> => {
-  return await db.select().from(menuSchema).limit(100);
+export const getAllMenuRepo = async (c: Context): Promise<SelectMenus[]> => {
+  const db = configDb(c);
+  return await db.query.menus.findMany({ limit: 100 });
 };
 
 export const getMenuWithIdRepo = async (
-  db: NeonHttpDatabase,
+  c: Context,
   menuId: string[]
 ): Promise<SelectMenus[]> => {
-  return await db
-    .select()
-    .from(menuSchema)
-    .where(inArray(menuSchema.id, menuId));
+  const db = configDb(c);
+  return await db.query.menus.findMany({
+    where: inArray(menuSchema.id, menuId),
+  });
 };
 
 export const getMenuWithCanteenIdRepo = async (
-  db: any,
+  c: Context,
   canteenId: string
 ): Promise<SelectMenus[]> => {
-  return await db
-    .select()
-    .from(menuSchema)
-    .where(eq(menuSchema.canteenId, canteenId))
-    .limit(100);
+  const db = configDb(c);
+  return await db.query.menus.findMany({
+    where: eq(menuSchema.canteenId, canteenId),
+    limit: 100,
+  });
 };
 
 export const createMenuRepo = async (
-  db: NeonHttpDatabase,
+  c: Context,
   data: InsertMenus
 ): Promise<boolean> => {
   try {
+    const db = configDb(c);
     await db.insert(menuSchema).values(data);
     return true;
   } catch (error) {
@@ -46,7 +50,7 @@ export const createMenuRepo = async (
 };
 
 export const updateMenuRepo = async (
-  db: NeonHttpDatabase,
+  c: Context,
   id: string,
   data: Partial<UpdateMenus>
 ): Promise<UpdateMenus[] | null> => {
@@ -54,6 +58,8 @@ export const updateMenuRepo = async (
     const updateData = Object.fromEntries(
       Object.entries(data).filter(([_, v]) => v !== null)
     );
+
+    const db = configDb(c);
     const res = await db
       .update(menuSchema)
       .set(updateData)
@@ -67,10 +73,11 @@ export const updateMenuRepo = async (
 };
 
 export const deleteMenuRepo = async (
-  db: NeonHttpDatabase,
+  c: Context,
   id: string
 ): Promise<boolean> => {
   try {
+    const db = configDb(c);
     const res = await db
       .delete(menuSchema)
       .where(eq(menuSchema.id, id))

@@ -17,8 +17,7 @@ const menuRouter = new Hono<{ Bindings: Env }>();
 
 menuRouter.get("/", async (c) => {
   try {
-    const db = configDb(c);
-    const result = await getAllMenuRepo(db);
+    const result = await getAllMenuRepo(c);
     if (result.length > 0) {
       return c.json({
         status: true,
@@ -57,9 +56,7 @@ menuRouter.post(
     const { name, imageUrl, type, canteenId, price, description, signature } =
       c.req.valid("json");
     try {
-      const db = configDb(c);
-      const res = await createMenuRepo(db, {
-        id: uuidv4(),
+      const res = await createMenuRepo(c, {
         name,
         type,
         canteenId,
@@ -83,6 +80,7 @@ menuRouter.post(
     }
   }
 );
+
 menuRouter.put(
   "/",
   zValidator(
@@ -108,8 +106,7 @@ menuRouter.put(
     const descriptionChecked = description ?? undefined;
 
     try {
-      const db = configDb(c);
-      const res = await updateMenuRepo(db, id, {
+      const res = await updateMenuRepo(c, id, {
         name: nameChecked,
         type: typeChecked,
         price: priceChecked,
@@ -150,8 +147,7 @@ menuRouter.delete(
   async (c) => {
     const { id } = c.req.valid("param");
     try {
-      const db = configDb(c);
-      const res = await deleteMenuRepo(db, id);
+      const res = await deleteMenuRepo(c, id);
       if (!res) {
         return c.json(
           { status: false, statusCode: 404, message: "menu not found" },

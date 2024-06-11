@@ -31,14 +31,14 @@ app.get("/", (c) => {
   });
 });
 
-const server = Bun.serve({
-  hostname: "::",
-  port: process.env.PORT ?? 3000,
-  fetch: app.fetch,
-});
-console.log(`Listening on http://localhost:${server.port}`);
-
-// export default {
-//   port: 8080,
+// const server = Bun.serve({
+//   hostname: "::",
+//   port: process.env.PORT ?? 3000,
 //   fetch: app.fetch,
-// };
+// });
+// console.log(`Listening on http://localhost:${server.port}`);
+
+export default {
+  port: 8080,
+  fetch: app.fetch,
+};

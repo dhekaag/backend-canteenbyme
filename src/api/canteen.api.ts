@@ -20,8 +20,7 @@ const canteenRouter = new Hono<{ Bindings: Env }>();
 
 canteenRouter.get("/", async (c) => {
   try {
-    const db = configDb(c);
-    const result = await getAllCanteensWithSignatureMenus(db);
+    const result = await getAllCanteensWithSignatureMenus(c);
     if (result.length > 0) {
       return c.json({
         status: true,
@@ -54,8 +53,7 @@ canteenRouter.get(
     const { id } = c.req.valid("param");
 
     try {
-      const db = configDb(c);
-      const result = await getMenuWithCanteenIdRepo(db, id);
+      const result = await getMenuWithCanteenIdRepo(c, id);
       if (result.length > 0) {
         return c.json({
           status: true,
@@ -89,9 +87,7 @@ canteenRouter.post(
   async (c) => {
     const { name, imageUrl } = c.req.valid("json");
     try {
-      const db = configDb(c);
-      const res = await createCanteenRepo(db, {
-        id: uuidv4(),
+      const res = await createCanteenRepo(c, {
         name,
         imageUrl,
       });
@@ -131,8 +127,7 @@ canteenRouter.put(
     const openChecked = open ?? undefined;
 
     try {
-      const db = configDb(c);
-      const res = await updateCanteenRepo(db, id, {
+      const res = await updateCanteenRepo(c, id, {
         name: nameChecked,
         imageUrl,
         open,
@@ -170,8 +165,7 @@ canteenRouter.delete(
   async (c) => {
     const { id } = c.req.valid("param");
     try {
-      const db = configDb(c);
-      const res = await deleteCanteenRepo(db, id);
+      const res = await deleteCanteenRepo(c, id);
       if (!res) {
         return c.json({ message: "Canteen not found" }, 404);
       } else {
