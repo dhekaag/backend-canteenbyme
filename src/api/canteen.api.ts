@@ -19,9 +19,8 @@ import { Env } from "../utils/config.env";
 const canteenRouter = new Hono<{ Bindings: Env }>();
 
 canteenRouter.get("/", async (c) => {
-  const sql = neon(Bun.env.DATABASE_URL ?? "");
-  const db = drizzle(sql);
   try {
+    const db = configDb(c);
     const result = await getAllCanteensWithSignatureMenus(db);
     if (result.length > 0) {
       return c.json({
@@ -53,9 +52,9 @@ canteenRouter.get(
   ),
   async (c) => {
     const { id } = c.req.valid("param");
-    const sql = neon(Bun.env.DATABASE_URL ?? "");
-    const db = drizzle(sql);
+
     try {
+      const db = configDb(c);
       const result = await getMenuWithCanteenIdRepo(db, id);
       if (result.length > 0) {
         return c.json({
@@ -88,10 +87,9 @@ canteenRouter.post(
     })
   ),
   async (c) => {
-    const sql = neon(Bun.env.DATABASE_URL ?? "");
-    const db = drizzle(sql);
     const { name, imageUrl } = c.req.valid("json");
     try {
+      const db = configDb(c);
       const res = await createCanteenRepo(db, {
         id: uuidv4(),
         name,
@@ -131,10 +129,9 @@ canteenRouter.put(
     const { id, name, imageUrl, open } = c.req.valid("json");
     const nameChecked = name ?? undefined;
     const openChecked = open ?? undefined;
-    const sql = neon(Bun.env.DATABASE_URL ?? "");
-    const db = drizzle(sql);
 
     try {
+      const db = configDb(c);
       const res = await updateCanteenRepo(db, id, {
         name: nameChecked,
         imageUrl,
@@ -171,10 +168,9 @@ canteenRouter.delete(
     })
   ),
   async (c) => {
-    const sql = neon(Bun.env.DATABASE_URL ?? "");
-    const db = drizzle(sql);
     const { id } = c.req.valid("param");
     try {
+      const db = configDb(c);
       const res = await deleteCanteenRepo(db, id);
       if (!res) {
         return c.json({ message: "Canteen not found" }, 404);

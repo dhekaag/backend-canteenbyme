@@ -14,6 +14,7 @@ import {
   createOrderRepo,
   updateOrderRepo,
 } from "../repositories/order.repository";
+import { configDb } from "../db/config";
 
 const orderRouter = new Hono<{ Bindings: Env }>();
 
@@ -39,8 +40,6 @@ orderRouter.post(
     })
   ),
   async (c) => {
-    const sql = neon(Bun.env.DATABASE_URL ?? "");
-    const db = drizzle(sql);
     const {
       userName,
       userEmail,
@@ -53,6 +52,7 @@ orderRouter.post(
 
     const menuId = orderMenus.map((menu) => menu.id);
     try {
+      const db = configDb(c);
       const menu: SelectMenus[] = await getMenuWithIdRepo(db, menuId);
       if (!menu) {
         return c.json(
@@ -160,8 +160,7 @@ orderRouter.post(
   async (c) => {
     const { id, updated, status, ewallet_type, paid_at } = c.req.valid("json");
     try {
-      const sql = neon(Bun.env.DATABASE_URL ?? "");
-      const db = drizzle(sql);
+      const db = configDb(c);
       const updateOrder = await updateOrderRepo(db, id, {
         status: status,
         payment_method: ewallet_type,
@@ -198,9 +197,8 @@ orderRouter.get(
   ),
   async (c) => {
     const { id } = c.req.valid("param");
-    const sql = neon(Bun.env.DATABASE_URL ?? "");
-    const db = drizzle(sql);
     try {
+      const db = configDb(c);
       const result: Invoice = await xenditInvoiceClient.getInvoiceById({
         invoiceId: id,
       });

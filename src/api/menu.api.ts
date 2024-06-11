@@ -11,13 +11,13 @@ import {
   updateMenuRepo,
 } from "../repositories/menu.repository";
 import { Env } from "../utils/config.env";
+import { configDb } from "../db/config";
 
 const menuRouter = new Hono<{ Bindings: Env }>();
 
 menuRouter.get("/", async (c) => {
-  const sql = neon(Bun.env.DATABASE_URL ?? "");
-  const db = drizzle(sql);
   try {
+    const db = configDb(c);
     const result = await getAllMenuRepo(db);
     if (result.length > 0) {
       return c.json({
@@ -54,11 +54,10 @@ menuRouter.post(
     })
   ),
   async (c) => {
-    const sql = neon(Bun.env.DATABASE_URL ?? "");
-    const db = drizzle(sql);
     const { name, imageUrl, type, canteenId, price, description, signature } =
       c.req.valid("json");
     try {
+      const db = configDb(c);
       const res = await createMenuRepo(db, {
         id: uuidv4(),
         name,
@@ -107,10 +106,9 @@ menuRouter.put(
     const signatureChecked = signature ?? undefined;
     const imageUrlChecked = imageUrl ?? undefined;
     const descriptionChecked = description ?? undefined;
-    const sql = neon(process.env.DATABASE_URL ?? "");
-    const db = drizzle(sql);
 
     try {
+      const db = configDb(c);
       const res = await updateMenuRepo(db, id, {
         name: nameChecked,
         type: typeChecked,
@@ -150,10 +148,9 @@ menuRouter.delete(
     })
   ),
   async (c) => {
-    const sql = neon(Bun.env.DATABASE_URL ?? "");
-    const db = drizzle(sql);
     const { id } = c.req.valid("param");
     try {
+      const db = configDb(c);
       const res = await deleteMenuRepo(db, id);
       if (!res) {
         return c.json(
