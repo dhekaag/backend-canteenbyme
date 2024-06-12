@@ -27,7 +27,7 @@ app.get("/", (c) => {
   return c.json({
     status: true,
     statusCode: 200,
-    message: "Hello world",
+    message: "Hello, welcome to canteenbyme",
   });
 });
 
@@ -37,7 +37,6 @@ const server = Bun.serve({
   fetch: app.fetch,
 });
 console.log(`Listening on http://localhost:${server.port}`);
-
 // export default {
 //   port: 8080,
 //   fetch: app.fetch,
