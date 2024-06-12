@@ -1,9 +1,9 @@
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
+import { bearerAuth } from "hono/bearer-auth";
 import { Invoice, InvoiceItem } from "xendit-node/invoice/models";
 import { CreateInvoiceRequest } from "xendit-node/invoice/models/CreateInvoiceRequest";
 import { z } from "zod";
-import { configDb } from "../db/config";
 import { SelectMenus } from "../db/schema";
 import { getMenuWithIdRepo } from "../repositories/menu.repository";
 import {
@@ -15,10 +15,34 @@ import {
 import { Env } from "../utils/config.env";
 import { OrderIdGenerator } from "../utils/id.generator";
 import { xenditInvoiceClient } from "../utils/xendit.services";
+import { getUserSessionWithTokenRepo } from "../repositories/user.repository";
+import { apiInvoiceCallbackMiddleware } from "../middleware/api.middleware";
 
 const orderRouter = new Hono<{ Bindings: Env }>();
 
 const orderIdGenerator = new OrderIdGenerator(100);
+
+orderRouter.use(
+  "/user/:id",
+  bearerAuth({
+    verifyToken: async (token, c) => {
+      const queryToken = await getUserSessionWithTokenRepo(c, token);
+      return token === queryToken?.sessionToken;
+    },
+  })
+);
+
+orderRouter.use(
+  "/invoice/*",
+  bearerAuth({
+    verifyToken: async (token, c) => {
+      const queryToken = await getUserSessionWithTokenRepo(c, token);
+      return token === queryToken?.sessionToken;
+    },
+  })
+);
+
+orderRouter.use("/notify", (c, next) => apiInvoiceCallbackMiddleware(c, next));
 
 const menusSchema = z.object({
   id: z.string(),
@@ -163,8 +187,9 @@ orderRouter.post(
     }
   }
 );
+
 orderRouter.post(
-  "/invoice/notify",
+  "/notify",
   zValidator(
     "json",
     z.object({
@@ -176,7 +201,7 @@ orderRouter.post(
       ewallet_type: z.string().optional(),
     })
   ),
-  async (c) => {
+  async (c, next) => {
     const { id, updated, status, ewallet_type, paid_at } = c.req.valid("json");
     try {
       const updateOrder = await updateOrderRepo(c, id, {
