@@ -22,26 +22,6 @@ const orderRouter = new Hono<{ Bindings: Env }>();
 
 const orderIdGenerator = new OrderIdGenerator(100);
 
-orderRouter.use(
-  "/user/:id",
-  bearerAuth({
-    verifyToken: async (token, c) => {
-      const queryToken = await getUserSessionWithTokenRepo(c, token);
-      return token === queryToken?.sessionToken;
-    },
-  })
-);
-
-orderRouter.use(
-  "/invoice/*",
-  bearerAuth({
-    verifyToken: async (token, c) => {
-      const queryToken = await getUserSessionWithTokenRepo(c, token);
-      return token === queryToken?.sessionToken;
-    },
-  })
-);
-
 orderRouter.use("/notify", (c, next) => apiInvoiceCallbackMiddleware(c, next));
 
 const menusSchema = z.object({
@@ -64,6 +44,17 @@ orderRouter.post(
       fees: z.number().optional(),
     })
   ),
+  bearerAuth({
+    verifyToken: async (token, c) => {
+      const body = await c.req.json();
+      const userId: string = body["userId"];
+      // console.log("🚀 ~ verifyToken: ~ userId:", userId);
+      const queryToken = await getUserSessionWithTokenRepo(c, token);
+      return (
+        token === queryToken?.sessionToken && userId === queryToken?.userId
+      );
+    },
+  }),
   async (c) => {
     const {
       userId,
@@ -130,7 +121,7 @@ orderRouter.post(
         ).createInvoice({
           data,
         });
-        console.log("🚀 ~ xenditResponse:", xenditResponse);
+        // console.log("🚀 ~ xenditResponse:", xenditResponse);
         if (xenditResponse) {
           const createOrder = await createOrderRepo(c, {
             id: xenditResponse.id!!,
@@ -238,6 +229,13 @@ orderRouter.get(
       id: z.string().min(1).max(100),
     })
   ),
+  bearerAuth({
+    verifyToken: async (token, c) => {
+      const queryToken = await getUserSessionWithTokenRepo(c, token);
+      // console.log("🚀 ~ verifyToken: ~ queryToken:", queryToken?.userId);
+      return token === queryToken?.sessionToken;
+    },
+  }),
   async (c) => {
     const { id } = c.req.valid("param");
     try {
@@ -285,6 +283,13 @@ orderRouter.get(
       id: z.string().min(1).max(100),
     })
   ),
+  bearerAuth({
+    verifyToken: async (token, c) => {
+      const userId = c.req.param("id");
+      const queryToken = await getUserSessionWithTokenRepo(c, token);
+      return token === queryToken?.sessionToken && userId === queryToken.userId;
+    },
+  }),
   async (c) => {
     const { id } = c.req.valid("param");
     try {
