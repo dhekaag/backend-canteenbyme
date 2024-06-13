@@ -1,12 +1,12 @@
 import { createMiddleware } from "hono/factory";
 
 export const apiMiddleware = createMiddleware(async (c, next) => {
-  const apiKey = c.req.header("x-api-key");
+  const apiKey = c.req.header("api-key");
   const envApiKey = c.env.API_KEY;
   if (apiKey === envApiKey) {
     return next();
   } else {
-    return c.json({ message: "missing API key" }, 401);
+    return c.json({ message: "need API key" }, 401);
   }
 });
 
