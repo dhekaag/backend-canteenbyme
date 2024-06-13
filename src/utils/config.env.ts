@@ -4,7 +4,6 @@ export type Env = {
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   GOOGLE_REDIRECT_URI: string;
-  GOOGLE_TOKEN_ENDPOINT: string;
-  GOOGLE_AUTH_ENDPOINT: string;
-  xnd_XENDIT_SECRET_KEY: string;
+  XENDIT_SECRET_KEY: string;
+  API_KEY: string;
 };

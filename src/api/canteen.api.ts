@@ -19,10 +19,8 @@ import { Env } from "../utils/config.env";
 const canteenRouter = new Hono<{ Bindings: Env }>();
 
 canteenRouter.get("/", async (c) => {
-  const sql = neon(Bun.env.DATABASE_URL ?? "");
-  const db = drizzle(sql);
   try {
-    const result = await getAllCanteensWithSignatureMenus(db);
+    const result = await getAllCanteensWithSignatureMenus(c);
     if (result.length > 0) {
       return c.json({
         status: true,
@@ -53,10 +51,9 @@ canteenRouter.get(
   ),
   async (c) => {
     const { id } = c.req.valid("param");
-    const sql = neon(Bun.env.DATABASE_URL ?? "");
-    const db = drizzle(sql);
+
     try {
-      const result = await getMenuWithCanteenIdRepo(db, id);
+      const result = await getMenuWithCanteenIdRepo(c, id);
       if (result.length > 0) {
         return c.json({
           status: true,
@@ -88,12 +85,9 @@ canteenRouter.post(
     })
   ),
   async (c) => {
-    const sql = neon(Bun.env.DATABASE_URL ?? "");
-    const db = drizzle(sql);
     const { name, imageUrl } = c.req.valid("json");
     try {
-      const res = await createCanteenRepo(db, {
-        id: uuidv4(),
+      const res = await createCanteenRepo(c, {
         name,
         imageUrl,
       });
@@ -131,11 +125,9 @@ canteenRouter.put(
     const { id, name, imageUrl, open } = c.req.valid("json");
     const nameChecked = name ?? undefined;
     const openChecked = open ?? undefined;
-    const sql = neon(Bun.env.DATABASE_URL ?? "");
-    const db = drizzle(sql);
 
     try {
-      const res = await updateCanteenRepo(db, id, {
+      const res = await updateCanteenRepo(c, id, {
         name: nameChecked,
         imageUrl,
         open,
@@ -171,11 +163,9 @@ canteenRouter.delete(
     })
   ),
   async (c) => {
-    const sql = neon(Bun.env.DATABASE_URL ?? "");
-    const db = drizzle(sql);
     const { id } = c.req.valid("param");
     try {
-      const res = await deleteCanteenRepo(db, id);
+      const res = await deleteCanteenRepo(c, id);
       if (!res) {
         return c.json({ message: "Canteen not found" }, 404);
       } else {

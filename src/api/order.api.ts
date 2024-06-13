@@ -1,23 +1,48 @@
 import { zValidator } from "@hono/zod-validator";
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
 import { Hono } from "hono";
-import { z } from "zod";
-import { getMenuWithIdRepo } from "../repositories/menu.repository";
-import { Env } from "../utils/config.env";
-import { xenditInvoiceClient } from "../utils/xendit.services";
-import { CreateInvoiceRequest } from "xendit-node/invoice/models/CreateInvoiceRequest";
-import { SelectMenus } from "../db/schema";
+import { bearerAuth } from "hono/bearer-auth";
 import { Invoice, InvoiceItem } from "xendit-node/invoice/models";
-import { OrderIdGenerator } from "../utils/id.generator";
+import { CreateInvoiceRequest } from "xendit-node/invoice/models/CreateInvoiceRequest";
+import { z } from "zod";
+import { SelectMenus } from "../db/schema";
+import { getMenuWithIdRepo } from "../repositories/menu.repository";
 import {
+  createOrderMenusRepo,
   createOrderRepo,
+  getOrdersWithUserIdRepo,
   updateOrderRepo,
 } from "../repositories/order.repository";
+import { Env } from "../utils/config.env";
+import { OrderIdGenerator } from "../utils/id.generator";
+import { xenditInvoiceClient } from "../utils/xendit.services";
+import { getUserSessionWithTokenRepo } from "../repositories/user.repository";
+import { apiInvoiceCallbackMiddleware } from "../middleware/api.middleware";
 
 const orderRouter = new Hono<{ Bindings: Env }>();
 
 const orderIdGenerator = new OrderIdGenerator(100);
+
+orderRouter.use(
+  "/user/:id",
+  bearerAuth({
+    verifyToken: async (token, c) => {
+      const queryToken = await getUserSessionWithTokenRepo(c, token);
+      return token === queryToken?.sessionToken;
+    },
+  })
+);
+
+orderRouter.use(
+  "/invoice/*",
+  bearerAuth({
+    verifyToken: async (token, c) => {
+      const queryToken = await getUserSessionWithTokenRepo(c, token);
+      return token === queryToken?.sessionToken;
+    },
+  })
+);
+
+orderRouter.use("/notify", (c, next) => apiInvoiceCallbackMiddleware(c, next));
 
 const menusSchema = z.object({
   id: z.string(),
@@ -29,6 +54,7 @@ orderRouter.post(
   zValidator(
     "json",
     z.object({
+      userId: z.string().min(1).max(100),
       userName: z.string().min(1).max(100),
       userEmail: z.string().min(1).max(100),
       tableNumber: z.number().min(1).max(100),
@@ -39,9 +65,8 @@ orderRouter.post(
     })
   ),
   async (c) => {
-    const sql = neon(Bun.env.DATABASE_URL ?? "");
-    const db = drizzle(sql);
     const {
+      userId,
       userName,
       userEmail,
       orderMenus,
@@ -53,7 +78,7 @@ orderRouter.post(
 
     const menuId = orderMenus.map((menu) => menu.id);
     try {
-      const menu: SelectMenus[] = await getMenuWithIdRepo(db, menuId);
+      const menu: SelectMenus[] = await getMenuWithIdRepo(c, menuId);
       if (!menu) {
         return c.json(
           { status: false, statusCode: 404, message: "Menu not found" },
@@ -77,7 +102,7 @@ orderRouter.post(
         );
         const orderId = orderIdGenerator.nextId();
         const data: CreateInvoiceRequest = {
-          externalId: `Meja:${tableNumber},nomor pesananan:C${orderId}`,
+          externalId: `Meja:${tableNumber},nomor pesananan:${orderId}`,
           description: description,
           currency: "IDR",
           amount: totalPrice,
@@ -95,32 +120,42 @@ orderRouter.post(
           customerNotificationPreference: {
             invoicePaid: ["email", "viber"],
           },
-          successRedirectUrl: redirectUrl + "/verified",
+          successRedirectUrl: `${redirectUrl}/verified`,
           reminderTime: 1,
           items,
         };
 
-        const xenditResponse: Invoice = await xenditInvoiceClient.createInvoice(
-          {
-            data,
-          }
-        );
+        const xenditResponse: Invoice = await xenditInvoiceClient(
+          c
+        ).createInvoice({
+          data,
+        });
         console.log("🚀 ~ xenditResponse:", xenditResponse);
         if (xenditResponse) {
-          const createOrder = await createOrderRepo(db, {
+          const createOrder = await createOrderRepo(c, {
             id: xenditResponse.id!!,
-            externalId: xenditResponse.externalId,
-            userName: userName,
-            userEmail: userEmail,
-            menus: menuId,
-            payment_method: xenditResponse.paymentMethod!!,
+            orderNumber: orderId,
+            tableNumber: tableNumber.toString(),
+            userId: userId,
+            paymentMethod: xenditResponse.paymentMethod!!,
             status: xenditResponse.status,
             totalItem: orderMenus.length,
             totalPrice: totalPrice,
-            updatedAt: xenditResponse.updated,
-            createdAt: xenditResponse.created,
+            updatedAt: xenditResponse.updated.toISOString(),
+            createdAt: xenditResponse.created.toISOString(),
           });
-          if (createOrder) {
+
+          const createOrderMenusData = orderMenus.map((menu) => ({
+            orderId: xenditResponse.id!!,
+            menuId: menu.id,
+          }));
+
+          const createOrderMenus = await createOrderMenusRepo(
+            c,
+            createOrderMenusData
+          );
+
+          if (createOrder !== null && createOrderMenus !== null) {
             return c.json(
               {
                 status: true,
@@ -131,6 +166,15 @@ orderRouter.post(
                 },
               },
               201
+            );
+          } else {
+            return c.json(
+              {
+                status: false,
+                statusCode: 404,
+                message: "insert invoice to database error",
+              },
+              500
             );
           }
         }
@@ -143,28 +187,26 @@ orderRouter.post(
     }
   }
 );
+
 orderRouter.post(
-  "/invoice/callback",
+  "/notify",
   zValidator(
     "json",
     z.object({
       id: z.string().min(1).max(100),
       status: z.string(),
-      updated: z.date(),
-      paid_at: z.date().optional(),
-
+      updated: z.string(),
+      paid_at: z.string().optional(),
       external_id: z.string().optional(),
       ewallet_type: z.string().optional(),
     })
   ),
-  async (c) => {
+  async (c, next) => {
     const { id, updated, status, ewallet_type, paid_at } = c.req.valid("json");
     try {
-      const sql = neon(Bun.env.DATABASE_URL ?? "");
-      const db = drizzle(sql);
-      const updateOrder = await updateOrderRepo(db, id, {
+      const updateOrder = await updateOrderRepo(c, id, {
         status: status,
-        payment_method: ewallet_type,
+        paymentMethod: ewallet_type,
         paidAt: paid_at,
         updatedAt: updated,
       });
@@ -198,10 +240,8 @@ orderRouter.get(
   ),
   async (c) => {
     const { id } = c.req.valid("param");
-    const sql = neon(Bun.env.DATABASE_URL ?? "");
-    const db = drizzle(sql);
     try {
-      const result: Invoice = await xenditInvoiceClient.getInvoiceById({
+      const result: Invoice = await xenditInvoiceClient(c).getInvoiceById({
         invoiceId: id,
       });
       console.log("🚀 ~ result:", result);
@@ -231,6 +271,40 @@ orderRouter.get(
 
       return c.json(
         { status: false, statusCode: 404, message: "Invoice not found" },
+        404
+      );
+    }
+  }
+);
+
+orderRouter.get(
+  "/user/:id",
+  zValidator(
+    "param",
+    z.object({
+      id: z.string().min(1).max(100),
+    })
+  ),
+  async (c) => {
+    const { id } = c.req.valid("param");
+    try {
+      const queryOrders = await getOrdersWithUserIdRepo(c, id);
+      console.log("🚀 ~ result:", queryOrders);
+      if (queryOrders !== null) {
+        return c.json(
+          {
+            status: true,
+            statusCode: 200,
+            data: queryOrders,
+          },
+          200
+        );
+      }
+    } catch (error) {
+      console.log("🚀 ~ error:", error);
+
+      return c.json(
+        { status: false, statusCode: 404, message: "Order not found" },
         404
       );
     }
