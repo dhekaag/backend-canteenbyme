@@ -5,6 +5,7 @@ CanteenbyMe is a solution for efficient food menu ordering in the UPNVJ canteen.
 ## Tech Stack
 
 - Framework [HonoJS](https://hono.dev/)
+- [BUN](https://bun.sh/) runtime
 - [TypeScript](https://www.typescriptlang.org/) language support
 - [Drizzle ORM](https://orm.drizzle.team/) for create database schema
 - [Neon](https://neon.tech/) serverless platform for [postgres](https://www.postgresql.org/) database
