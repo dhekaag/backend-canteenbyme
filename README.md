@@ -15,11 +15,11 @@ CanteenbyMe is a solution for efficient food menu ordering in the UPNVJ canteen.
 ### install dependencies
 
 ```bash
-    pnpm install
+    bun install
 ```
 
 ### run dev mode in localhost
 
 ```bash
-    pnpm run dev
+    bun run dev
 ```
